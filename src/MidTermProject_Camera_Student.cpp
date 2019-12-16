@@ -41,24 +41,36 @@ int main(int argc, const char *argv[])
     bool bVis = false;            // visualize results
     boost::circular_buffer<DataFrame> dataBuffer;
     dataBuffer.set_capacity(dataBufferSize);
-    ofstream keypoints_csv, matchedKeypoints_csv;
+    ofstream keypoints_csv, matchedKeypoints_csv, time_csv;
     keypoints_csv.open("../Keypoints.csv");
     vector<string> detector_names = {"SHITOMASI", "HARRIS", "FAST", "BRISK", "ORB", "AKAZE", "SIFT"};
-    //matchedKeypoints_csv.open("../matchedKeypoints.csv");
-    vector<string> descriptor_names = {"BRISK", "BRIEF", "ORB", "FREAK" , "SIFT"};
-    //, "HARRIS", "FAST", "BRISK", "ORB", "AKAZE", "SIFT"
-    
+    matchedKeypoints_csv.open("../matchedKeypoints.csv");
+    vector<string> descriptor_names = {"BRISK", "BRIEF", "ORB", "FREAK" , "SIFT"}; //AKAZE descriptor is not necessary since it doesnt work (12/16/19)
+    time_csv.open("../time.csv");
     for (auto t=detector_names.begin(); t!=detector_names.end(); ++t){
 
-   // for(auto descriptor_iterator=descriptor_names.begin(); descriptor_iterator!=descriptor_names.end(); ++descriptor_iterator){
+    for(auto descriptor_iterator=descriptor_names.begin(); descriptor_iterator!=descriptor_names.end(); ++descriptor_iterator){
+    string detectorType = *t;
+    string descriptorType = *descriptor_iterator; // BRIEF, ORB, FREAK, AKAZE, SIFT
+    //SIFT is likely to be incompatible with other algorithms according to OpenCV link sent by mentor (12/16/19)
+    if(detectorType.compare("SIFT") == 0 && descriptorType.compare("SIFT") != 0){
+        cout << "Skipping Detector_Descriptor: " << detectorType << "_" << descriptorType << endl;
+        continue;
+    }
+    if(detectorType.compare("SIFT") != 0 && descriptorType.compare("SIFT") == 0){
+        cout << "Skipping Detector_Descriptor: " << detectorType << "_" << descriptorType << endl;
+        continue;
+    }
     dataBuffer.clear();
     keypoints_csv << *t; //Detector name into 1st column of csv
-    //matchedKeypoints_csv << *t << "," << *descriptor_iterator; //Detector + Descriptor name into CSV
+    matchedKeypoints_csv << *t << "," << *descriptor_iterator; //Detector + Descriptor name into CSV
+    time_csv << *t << "," << *descriptor_iterator; //Detector + Descriptor name into CSV
     /* MAIN LOOP OVER ALL IMAGES */
     for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex++)
     {
         /* LOAD IMAGE INTO BUFFER */
 
+        double t = (double)cv::getTickCount();
         // assemble filenames for current index
         ostringstream imgNumber;
         imgNumber << setfill('0') << setw(imgFillWidth) << imgStartIndex + imgIndex;
@@ -83,7 +95,8 @@ int main(int argc, const char *argv[])
 
         // extract 2D keypoints from current image
         vector<cv::KeyPoint> keypoints; // create empty feature list for current image
-        string detectorType = *t;
+
+
 
         //// STUDENT ASSIGNMENT
         //// TASK MP.2 -> add the following keypoint detectors in file matching2D.cpp and enable string-based selection based on detectorType
@@ -108,6 +121,7 @@ int main(int argc, const char *argv[])
         //// TASK MP.3 -> only keep keypoints on the preceding vehicle
         vector<cv::KeyPoint>::iterator keypoint;
         vector<cv::KeyPoint> keypoints_target;
+        
         // only keep keypoints on the preceding vehicle
         bool bFocusOnVehicle = true;
         cv::Rect vehicleRect(535, 180, 180, 150); //cx = 535, cy = 180, w = 180, h = 150
@@ -119,6 +133,7 @@ int main(int argc, const char *argv[])
                 if (vehicleRect.contains(keypoint->pt)){
                    cv::KeyPoint keyPointInRange;
                    keyPointInRange.pt = cv::Point2f(keypoint->pt);
+                   keyPointInRange.size = 1;
                 keypoints_target.push_back(keyPointInRange);
                 }
             }
@@ -144,6 +159,7 @@ int main(int argc, const char *argv[])
 
         // push keypoints and descriptor for current frame to end of data buffer
         (dataBuffer.end() - 1)->keypoints = keypoints;
+        
         cout << "#2 : DETECT KEYPOINTS done" << endl;
 
         /* EXTRACT KEYPOINT DESCRIPTORS */
@@ -153,7 +169,6 @@ int main(int argc, const char *argv[])
         //// -> BRIEF, ORB, FREAK, AKAZE, SIFT
 
         cv::Mat descriptors;
-        string descriptorType = "SIFT"; // BRIEF, ORB, FREAK, AKAZE, SIFT
         descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
         //// EOF STUDENT ASSIGNMENT
 
@@ -169,14 +184,14 @@ int main(int argc, const char *argv[])
 
             vector<cv::DMatch> matches;
             string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
-            string descriptorType; // DES_BINARY, DES_HOG
+            string descriptor_Type; // DES_BINARY, DES_HOG
             if (descriptorType.compare("SIFT") == 0)
             {
-                descriptorType = "DES_HOG";
+                descriptor_Type = "DES_HOG";
             } else {
-                descriptorType = "DES_BINARY";
+                descriptor_Type = "DES_BINARY";
             }
-            string selectorType = "SEL_NN";       // SEL_NN, SEL_KNN
+            string selectorType = "SEL_KNN";       // SEL_NN, SEL_KNN
 
             //// STUDENT ASSIGNMENT
             //// TASK MP.5 -> add FLANN matching in file matching2D.cpp
@@ -184,14 +199,17 @@ int main(int argc, const char *argv[])
 
             matchDescriptors((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints,
                              (dataBuffer.end() - 2)->descriptors, (dataBuffer.end() - 1)->descriptors,
-                             matches, descriptorType, matcherType, selectorType);
+                             matches, descriptor_Type, matcherType, selectorType);
 
             //// EOF STUDENT ASSIGNMENT
 
             // store matches in current data frame
             (dataBuffer.end() - 1)->kptMatches = matches;
 
-            //matchedKeypoints_csv << ", " << matches.size();
+            matchedKeypoints_csv << ", " << matches.size();
+
+            t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+            time_csv << "," << 1000*t; 
 
             cout << "#4 : MATCH KEYPOINT DESCRIPTORS done" << endl;
 
@@ -218,11 +236,12 @@ int main(int argc, const char *argv[])
     } // eof loop over all images
 
     keypoints_csv << "\n";
-    //matchedKeypoints_csv << "\n";
-    //} // eof loop descriptors
+    matchedKeypoints_csv << "\n";
+    time_csv << "\n";
+    } // eof loop descriptors
     } // eof loop detectors
     // Close Files
     keypoints_csv.close();
-    //matchedKeypoints_csv.close();
+    matchedKeypoints_csv.close();
     return 0;
 }

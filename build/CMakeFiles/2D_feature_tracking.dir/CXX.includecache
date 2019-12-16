@@ -76,12 +76,6 @@ opencv2/xfeatures2d/nonfree.hpp
 dataStructures.h
 /home/workspace/SFND_2D_Feature_Matching/src/dataStructures.h
 
-/home/workspace/SFND_2D_Feature_Matching/src/matching2D_Student.cpp
-numeric
--
-matching2D.hpp
-/home/workspace/SFND_2D_Feature_Matching/src/matching2D.hpp
-
 /usr/local/include/opencv4/opencv2/calib3d.hpp
 opencv2/core.hpp
 /usr/local/include/opencv4/opencv2/opencv2/core.hpp

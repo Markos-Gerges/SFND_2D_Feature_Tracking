@@ -1,0 +1,3 @@
+The Fast Detector with the Brief Descriptor is my recommendation based on observations.
+The combination takes less than 15 ms and returns the highest number of matched key points
+Points which are in the region of interest.

@@ -13,6 +13,16 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
 
     if (matcherType.compare("MAT_BF") == 0)
     {
+        cout << "matchDescriptors() " << descriptorType << endl;
+        
+        //Bug fix for SIFT
+        if (descriptorType.compare("DES_HOG") == 0){
+            cout << "Converting Data Source " << endl;
+            if (descSource.type() != CV_32F){
+                descSource.convertTo(descSource, CV_32F);
+                descRef.convertTo(descRef, CV_32F);
+            }
+        }
         int normType = descriptorType.compare("DES_BINARY") == 0 ? cv::NORM_HAMMING : cv::NORM_L2;
         matcher = cv::BFMatcher::create(normType, crossCheck);
         cout << "BF matching cross-check=" << crossCheck;
@@ -42,7 +52,7 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
         // filter matches using descriptor distance ratio test
         double minDescDistRatio = 0.8;
         for (auto it = knn_matches.begin(); it != knn_matches.end(); ++it){
-            if ((*it)[0].distance < minDescDistRatio * (*it)[1].distance)
+            if ((*it)[0].distance < (minDescDistRatio * (*it)[1].distance))
             {
                 matches.push_back((*it)[0]);
                 
@@ -56,6 +66,7 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
 // Use one of several types of state-of-art descriptors to uniquely identify keypoints
 void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, string descriptorType)
 {
+    cout << "Descriptor Type: " << descriptorType << endl;
     // select appropriate descriptor
     cv::Ptr<cv::DescriptorExtractor> extractor;
     if (descriptorType.compare("BRISK") == 0)
@@ -78,7 +89,7 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
         extractor = cv::AKAZE::create();
     }
     else if (descriptorType.compare("SIFT") == 0 ){
-        extractor = cv::xfeatures2d::SiftDescriptorExtractor::create();
+        extractor = cv::xfeatures2d::SIFT::create();
     }
     else if (descriptorType.compare("BRIEF") == 0){
         extractor = cv::xfeatures2d::BriefDescriptorExtractor::create();
@@ -194,6 +205,7 @@ void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &imgGray)
 
 void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType, bool bVis)
 {
+    cout << "Detector Created: " << detectorType << endl;cout << "Detector Created: " << detectorType << endl;
     cv::Ptr<cv::Feature2D> detector;
     //Create detectors
     if(detectorType.compare("FAST") == 0){
@@ -217,7 +229,6 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std:
         detector = cv::xfeatures2d::SIFT::create();
         detector->detect(img, keypoints);
     }
-
     // Visualize
     if (bVis){
         cv::Mat visImage = img.clone();
