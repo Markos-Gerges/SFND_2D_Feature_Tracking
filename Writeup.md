@@ -8,20 +8,20 @@
 * Implement a vector for dataBuffer objects whose size does not exceed a limit (e.g. 2 elements). 
 * This can be achieved by pushing in new elements on one end and removing elements on the other end.
 
-'''c++
+```c++
     int dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
     //vector<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
     bool bVis = false;            // visualize results
     boost::circular_buffer<DataFrame> dataBuffer;
     dataBuffer.set_capacity(dataBufferSize);
-'''
+```
 
 ### MP.2 Keypoint Detection
 
 * Implement detectors HARRIS, FAST, BRISK, ORB, AKAZE, and SIFT and make them selectable by setting a string accordingly.
 
 'MidTermProject_Camera_Student.cpp'
-'''c++
+```c++
         else if (detectorType.compare("HARRIS") == 0)
         {
             detKeypointsHarris(keypoints, imgGray);
@@ -31,9 +31,9 @@
         {
             detKeypointsModern(keypoints, imgGray, detectorType, false);
         }
-'''
+```
 'matching2D_Student.cpp'
-'''c++
+```c++
 void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &imgGray)
 {
                 // Detector parameters
@@ -130,13 +130,13 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std:
     }
 
 }
-'''
+```
 
 ### MP.3 Keypoint Removal
 
 * Remove all keypoints outside of a pre-defined rectangle and only use the keypoints within the rectangle for further processing.
 
-'''c++
+```c++
         // only keep keypoints on the preceding vehicle
         bool bFocusOnVehicle = true;
         cv::Rect vehicleRect(535, 180, 180, 150); //cx = 535, cy = 180, w = 180, h = 150
@@ -157,13 +157,13 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std:
 
         keypoints_csv << "," << keypoints.size();
         //// EOF STUDENT ASSIGNMENT
-'''
+```
 
 ### MP.4 Keypoint Descriptors
 
 * Implement descriptors BRIEF, ORB, FREAK, AKAZE and SIFT and make them selectable by setting a string accordingly.
 'MidTermProject_Camera_Student.cpp'
-'''c++
+```c++
             vector<cv::DMatch> matches;
             string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
             string descriptor_Type; // DES_BINARY, DES_HOG
@@ -173,9 +173,9 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std:
             } else {
                 descriptor_Type = "DES_BINARY";
             }
-'''
+```
 'matching2D_Student.cpp'
-'''c++
+```c++
     if (descriptorType.compare("BRISK") == 0)
     {
 
@@ -201,13 +201,13 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std:
     else if (descriptorType.compare("BRIEF") == 0){
         extractor = cv::xfeatures2d::BriefDescriptorExtractor::create();
     }
-'''
+```
 
 ### MP.5 Descriptor Matching
 
 * Implement FLANN matching as well as k-nearest neighbor selection. Both methods must be selectable using the respective strings in the main function.
 'matching2D_Student.cpp'
-'''c++
+```c++
 
     if (matcherType.compare("MAT_BF") == 0)
     {
@@ -233,13 +233,13 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std:
         }
         matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
     }
-'''
+```
 
 ### MP.6 Descriptor Distance Ratio
 
 * Use the K-Nearest-Neighbor matching to implement the descriptor distance ratio test, which looks at the ratio of best vs. second-best match to decide whether to keep an associated pair of keypoints.
 
-'''c++
+```c++
   // perform matching task
     if (selectorType.compare("SEL_NN") == 0)
     { // nearest neighbor (best match)
@@ -266,7 +266,7 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std:
         cout << "# keypoints removed = " << knn_matches.size() - matches.size() << endl;
         // ...
     }
-'''
+```
 
 ### MP.7 Performance Evaluation 1
 
